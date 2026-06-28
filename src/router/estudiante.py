@@ -11,7 +11,7 @@ router = APIRouter(tags=["Estudiantes"])
 def registrar_alumno(estudiante: Estudiante):
     db = DB.conectar()
     try:
-        datos_estudiante = estudiante.dict()
+        datos_estudiante = estudiante.model_dump()
 
         db.execute(
             text(
@@ -42,33 +42,31 @@ from sqlalchemy import text
 @router.get("/estudiantes/{id}", status_code=status.HTTP_200_OK)
 def consultar_estudiante(id: int):
     db = DB.conectar()
+
     try:
         resultado = db.execute(
-            text(
-                "SELECT id, codigo, nombres, apellidos, correo, carrera FROM estudiantes WHERE id = :id"
-            ),
-            {"id": id},
+            text("""
+                SELECT id, codigo, nombres, apellidos, correo, carrera
+                FROM estudiantes
+                WHERE id = :id OR codigo = :codigo
+                LIMIT 1
+            """),
+            {"id": id, "codigo": str(id)},
         ).fetchone()
 
-        if not resultado:
+        if resultado is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado"
             )
 
-        datos_estudiante = dict(resultado._mapping)
-        return {"status": "success", "data": datos_estudiante}
+        return {"status": "success", "data": dict(resultado._mapping)}
 
-    except HTTPException as he:
-        raise he
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"No se pudo obtener al estudiante: {str(e)}",
-        )
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ocurrió un error inesperado al obtener al estudiante",
+            detail=f"No se pudo obtener al estudiante: {e}",
         )
     finally:
         db.close()
@@ -78,7 +76,7 @@ def consultar_estudiante(id: int):
 def actualizar_estudiante(id: int, estudiante: Estudiante):
     db = DB.conectar()
     try:
-        datos_estudiante = estudiante.dict()
+        datos_estudiante = estudiante.model_dump()
 
         db.execute(
             text(

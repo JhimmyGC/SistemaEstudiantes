@@ -11,7 +11,7 @@ router = APIRouter(tags=["Cursos"])
 def registrar_curso(curso: Curso):
     db = DB.conectar()
     try:
-        datos_curso = curso.dict()
+        datos_curso = curso.model_dump()
 
         db.execute(
             text("""INSERT INTO cursos (codigo, nombre, creditos, docente) 
@@ -76,7 +76,7 @@ def consultar_curso(id: int):
 def actualizar_curso(id: int, curso: Curso):
     db = DB.conectar()
     try:
-        datos_curso = curso.dict()
+        datos_curso = curso.model_dump()
 
         db.execute(
             text(
